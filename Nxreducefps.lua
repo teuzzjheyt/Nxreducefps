@@ -94,7 +94,7 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Lista de slaps para alternar
+-- Lista de slaps para equipar
 local slapNames = {
     "Dark Matter Slap",
     "Flame Slap", 
@@ -102,37 +102,49 @@ local slapNames = {
     "Glitched Slap"
 }
 
--- Função para alternar entre os slaps
-local function switchSlaps()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
+-- Função para manter todos os slaps equipados
+local function maintainAllSlaps()
+    local char = player.Character
     local backpack = player:FindFirstChild("Backpack")
-    if not humanoid or not backpack then return end
-
-    -- Coletar apenas os slaps que o jogador tem
-    local availableSlaps = {}
-    for _, slapName in ipairs(slapNames) do
-        local slap = backpack:FindFirstChild(slapName) or char:FindFirstChild(slapName)
-        if slap then
-            table.insert(availableSlaps, slap)
-        end
-    end
     
-    -- Trocar entre os slaps disponíveis
-    if #availableSlaps > 0 then
-        for _, slap in ipairs(availableSlaps) do
-            humanoid:EquipTool(slap)
-            task.wait(0.2)
+    if not char or not backpack then return end
+
+    -- Verificar cada slap e garantir que permaneça no character
+    for _, slapName in ipairs(slapNames) do
+        local slap = backpack:FindFirstChild(slapName)
+        if slap then
+            -- Se o slap está na mochila, mover para o character
+            pcall(function()
+                slap.Parent = char
+            end)
+        else
+            -- Verificar se já está no character
+            slap = char:FindFirstChild(slapName)
+            if slap then
+                -- Garantir que permaneça no character
+                pcall(function()
+                    if slap.Parent ~= char then
+                        slap.Parent = char
+                    end
+                end)
+            end
         end
     end
 end
 
--- Loop principal
+-- Loop principal mais eficiente
 task.spawn(function()
     while true do
         if enabled then
-            switchSlaps()
+            maintainAllSlaps()
+            task.wait(0.05) -- Verificação rápida quando ativado
+        else
+            task.wait(0.2) -- Verificação mais lenta quando desativado
         end
-        task.wait(0.05)
     end
+end)
+
+-- Reconectar quando o personagem morrer para resetar
+player.CharacterAdded:Connect(function()
+    task.wait(2) -- Esperar o personagem carregar completamente
 end)
