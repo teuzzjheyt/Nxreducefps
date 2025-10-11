@@ -1,4 +1,4 @@
--- BRAINROT PARA 2 ITENS ESPECÍFICOS
+-- BRAINROT PARA 4 ITENS ESPECÍFICOS
 local enabled = false
 local player = game.Players.LocalPlayer
 
@@ -37,7 +37,7 @@ local label = Instance.new("TextLabel")
 label.Size = UDim2.new(0.7, 0, 1, 0)
 label.Position = UDim2.new(0, 10, 0, 0)
 label.BackgroundTransparency = 1
-label.Text = "Tutu FPS Kill"
+label.Text = "Slap Brainrot"
 label.Font = Enum.Font.Gotham
 label.TextSize = 16
 label.TextColor3 = Color3.fromRGB(255,255,255)
@@ -75,7 +75,7 @@ local function toggleBrainrot()
         toggle.BackgroundColor3 = Color3.fromRGB(255,0,0) -- OFF vermelho
         circle:TweenPosition(UDim2.new(0, 1, 0, 1), "Out", "Quad", 0.2, true)
     end
-    print(enabled and "Brainrot ativado (Bat + Medusa)" or "Brainrot desativado")
+    print(enabled and "Brainrot ativado (4 Slaps)" or "Brainrot desativado")
 end
 
 -- Clicar no toggle
@@ -94,21 +94,36 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Função para alternar os 2 itens específicos
-local function switchTwoItems()
+-- Lista de slaps para alternar
+local slapNames = {
+    "Dark Matter Slap",
+    "Flame Slap", 
+    "Galaxy Slap",
+    "Glitched Slap"
+}
+
+-- Função para alternar entre os slaps
+local function switchSlaps()
     local char = player.Character or player.CharacterAdded:Wait()
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     local backpack = player:FindFirstChild("Backpack")
     if not humanoid or not backpack then return end
 
-    local item1 = backpack:FindFirstChild("Bat") or char:FindFirstChild("Bat")
-    local item2 = backpack:FindFirstChild("Medusa's Head") or char:FindFirstChild("Medusa's Head")
-
-    if item1 and item2 then
-        humanoid:EquipTool(item1)
-        task.wait(0.1)  -- Reduzido para 0.1
-        humanoid:EquipTool(item2)
-        task.wait(0.1)  -- Reduzido para 0.1
+    -- Coletar apenas os slaps que o jogador tem
+    local availableSlaps = {}
+    for _, slapName in ipairs(slapNames) do
+        local slap = backpack:FindFirstChild(slapName) or char:FindFirstChild(slapName)
+        if slap then
+            table.insert(availableSlaps, slap)
+        end
+    end
+    
+    -- Trocar entre os slaps disponíveis
+    if #availableSlaps > 0 then
+        for _, slap in ipairs(availableSlaps) do
+            humanoid:EquipTool(slap)
+            task.wait(0.2)
+        end
     end
 end
 
@@ -116,7 +131,7 @@ end
 task.spawn(function()
     while true do
         if enabled then
-            switchTwoItems()
+            switchSlaps()
         end
         task.wait(0.05)
     end
