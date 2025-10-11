@@ -106,9 +106,9 @@ local function switchTwoItems()
 
     if item1 and item2 then
         humanoid:EquipTool(item1)
-        task.wait(0.15)
+        task.wait(0.1)  -- Reduzido para 0.1
         humanoid:EquipTool(item2)
-        task.wait(0.15)
+        task.wait(0.1)  -- Reduzido para 0.1
     end
 end
 
