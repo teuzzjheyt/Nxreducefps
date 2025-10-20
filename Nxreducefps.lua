@@ -2,88 +2,121 @@
 local enabled = false
 local player = game.Players.LocalPlayer
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.ResetOnSpawn = false
-gui.Name = "TutuFPSKillGUI"
-gui.Parent = player:WaitForChild("PlayerGui")
+-- Variável para controlar a mensagem atual
+local currentMessageGUI = nil
+local isAnimating = false
+local lastToggleTime = 0
 
--- Container com borda cinza
-local container = Instance.new("Frame")
-container.Size = UDim2.new(0, 204, 0, 34) -- espaço para borda
-container.Position = UDim2.new(0, 20, 0, 20)
-container.BackgroundColor3 = Color3.fromRGB(100, 100, 100) -- contorno cinza
-container.BorderSizePixel = 0
-container.Parent = gui
+-- Função para mostrar mensagem flutuante na tela com animação
+local function showMessage(text)
+    -- Verifica se pode criar nova mensagem
+    if isAnimating then
+        return false
+    end
+    
+    isAnimating = true
+    
+    -- Remove mensagem anterior se existir
+    if currentMessageGUI and currentMessageGUI.Parent then
+        currentMessageGUI:Destroy()
+        currentMessageGUI = nil
+    end
+    
+    local gui = Instance.new("ScreenGui")
+    gui.Name = "MessageGUI"
+    gui.Parent = player:WaitForChild("PlayerGui")
+    currentMessageGUI = gui
+    
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0, 300, 0, 50)
+    label.Position = UDim2.new(0.5, 0, 0.3, -60) -- Centralizado horizontalmente
+    label.AnchorPoint = Vector2.new(0.5, 0.5) -- Âncora no centro
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 24
+    label.TextStrokeTransparency = 0.8
+    label.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+    label.TextTransparency = 1 -- Começa invisível
+    label.TextXAlignment = Enum.TextXAlignment.Center -- Texto centralizado
+    label.TextYAlignment = Enum.TextYAlignment.Center -- Texto centralizado verticalmente
+    label.Parent = gui
+    
+    -- Variável para controlar a animação RGB
+    local rgbRunning = true
+    
+    -- Animação RGB no texto
+    task.spawn(function()
+        local hue = 0
+        while rgbRunning and label and label.Parent do
+            local color = Color3.fromHSV(hue, 1, 1)
+            label.TextColor3 = color
+            hue = (hue + 0.08) % 1
+            task.wait(0.02)
+        end
+    end)
+    
+    -- Animação de entrada (fade in)
+    local tweenIn = game:GetService("TweenService"):Create(label, TweenInfo.new(0.3), {
+        TextTransparency = 0
+    })
+    
+    tweenIn:Play()
+    
+    -- Timer para animação de saída
+    local animationEndTime = os.time() + 2 -- 2 segundos no total
+    
+    task.spawn(function()
+        tweenIn.Completed:Wait()
+        
+        -- Espera o tempo restante
+        local timeLeft = animationEndTime - os.time()
+        if timeLeft > 0 then
+            task.wait(timeLeft)
+        end
+        
+        -- Animação de saída (fade out)
+        if label and label.Parent then
+            rgbRunning = false
+            local tweenOut = game:GetService("TweenService"):Create(label, TweenInfo.new(0.3), {
+                TextTransparency = 1
+            })
+            tweenOut:Play()
+            tweenOut.Completed:Wait()
+        end
+        
+        -- Limpeza final
+        if gui and gui.Parent then
+            gui:Destroy()
+        end
+        if currentMessageGUI == gui then
+            currentMessageGUI = nil
+        end
+        isAnimating = false
+    end)
+    
+    return true
+end
 
-local uicContainer = Instance.new("UICorner")
-uicContainer.CornerRadius = UDim.new(0, 10)
-uicContainer.Parent = container
-
--- Barra fina principal dentro do container
-local bar = Instance.new("Frame")
-bar.Size = UDim2.new(0, 200, 0, 30)
-bar.Position = UDim2.new(0, 2, 0, 2) -- deixa espaço para a borda
-bar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-bar.BorderSizePixel = 0
-bar.Parent = container
-
-local uicBar = Instance.new("UICorner")
-uicBar.CornerRadius = UDim.new(0, 8)
-uicBar.Parent = bar
-
--- Texto do toggle
-local label = Instance.new("TextLabel")
-label.Size = UDim2.new(0.7, 0, 1, 0)
-label.Position = UDim2.new(0, 10, 0, 0)
-label.BackgroundTransparency = 1
-label.Text = "Nex reduce Fps"
-label.Font = Enum.Font.Gotham
-label.TextSize = 16
-label.TextColor3 = Color3.fromRGB(255,255,255)
-label.TextXAlignment = Enum.TextXAlignment.Left
-label.Parent = bar
-
--- Toggle estilo switch
-local toggle = Instance.new("Frame")
-toggle.Size = UDim2.new(0, 40, 0, 20)
-toggle.Position = UDim2.new(0.75, 0, 0.5, -10)
-toggle.BackgroundColor3 = Color3.fromRGB(255,0,0) -- OFF vermelho
-toggle.Parent = bar
-
-local uicToggle = Instance.new("UICorner")
-uicToggle.CornerRadius = UDim.new(0, 10)
-uicToggle.Parent = toggle
-
--- Bolinha do switch
-local circle = Instance.new("Frame")
-circle.Size = UDim2.new(0, 18, 0, 18)
-circle.Position = UDim2.new(0, 1, 0, 1)
-circle.BackgroundColor3 = Color3.fromRGB(255,255,255)
-circle.Parent = toggle
-local uicCircle = Instance.new("UICorner")
-uicCircle.CornerRadius = UDim.new(0, 9)
-uicCircle.Parent = circle
-
--- Função para alternar
+-- Função para alternar com debounce
 local function toggleBrainrot()
+    local currentTime = os.time()
+    
+    -- Debounce de 0.5 segundos
+    if currentTime - lastToggleTime < 0.5 then
+        return
+    end
+    
+    lastToggleTime = currentTime
     enabled = not enabled
+    
     if enabled then
-        toggle.BackgroundColor3 = Color3.fromRGB(0,200,0) -- ON verde
-        circle:TweenPosition(UDim2.new(1, -19, 0, 1), "Out", "Quad", 0.2, true)
+        showMessage("FPS DEVOUR ATIVADO")
     else
-        toggle.BackgroundColor3 = Color3.fromRGB(255,0,0) -- OFF vermelho
-        circle:TweenPosition(UDim2.new(0, 1, 0, 1), "Out", "Quad", 0.2, true)
+        showMessage("FPS DEVOUR DESATIVADO")
     end
     print(enabled and "Brainrot ativado (4 Slaps)" or "Brainrot desativado")
 end
-
--- Clicar no toggle
-toggle.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        toggleBrainrot()
-    end
-end)
 
 -- Keybind Q
 local UserInputService = game:GetService("UserInputService")
@@ -113,15 +146,12 @@ local function maintainAllSlaps()
     for _, slapName in ipairs(slapNames) do
         local slap = backpack:FindFirstChild(slapName)
         if slap then
-            -- Se o slap está na mochila, mover para o character
             pcall(function()
                 slap.Parent = char
             end)
         else
-            -- Verificar se já está no character
             slap = char:FindFirstChild(slapName)
             if slap then
-                -- Garantir que permaneça no character
                 pcall(function()
                     if slap.Parent ~= char then
                         slap.Parent = char
@@ -132,19 +162,21 @@ local function maintainAllSlaps()
     end
 end
 
--- Loop principal mais eficiente
+-- Loop principal
 task.spawn(function()
     while true do
         if enabled then
             maintainAllSlaps()
-            task.wait(0.05) -- Verificação rápida quando ativado
+            task.wait(0.05)
         else
-            task.wait(0.2) -- Verificação mais lenta quando desativado
+            task.wait(0.2)
         end
     end
 end)
 
--- Reconectar quando o personagem morrer para resetar
+-- Reconectar quando o personagem morrer
 player.CharacterAdded:Connect(function()
-    task.wait(2) -- Esperar o personagem carregar completamente
+    task.wait(2)
 end)
+
+print("Sistema FPS Devour carregado! Pressione Q para ativar/desativar")
