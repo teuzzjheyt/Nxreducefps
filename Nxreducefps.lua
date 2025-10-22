@@ -1,4 +1,4 @@
--- BRAINROT PARA 2 ITENS ESPECÍFICOS
+-- BRAINROT PARA 4 ITENS ESPECÍFICOS
 local enabled = false
 local player = game.Players.LocalPlayer
 
@@ -111,10 +111,11 @@ local function toggleBrainrot()
     enabled = not enabled
     
     if enabled then
-        showMessage("FPS DEVOUR ON")
+        showMessage("FPS DEVOUR ATIVADO")
     else
-        showMessage("FPS DEVOUR OFF")
+        showMessage("FPS DEVOUR DESATIVADO")
     end
+    print(enabled and "Brainrot ativado (4 Slaps)" or "Brainrot desativado")
 end
 
 -- Keybind Q
@@ -126,23 +127,38 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Função para alternar os 2 itens específicos
-local function switchTwoItems()
-    local char = player.Character or player.CharacterAdded:Wait()
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
+-- Lista de slaps para equipar
+local slapNames = {
+    "Dark Matter Slap",
+    "Flame Slap", 
+    "Galaxy Slap",
+    "Glitched Slap"
+}
+
+-- Função para manter todos os slaps equipados
+local function maintainAllSlaps()
+    local char = player.Character
     local backpack = player:FindFirstChild("Backpack")
-    if not humanoid or not backpack then return end
+    
+    if not char or not backpack then return end
 
-    local item1 = backpack:FindFirstChild("Dark Matter Slap") or char:FindFirstChild("Dark Matter Slap")
-    local item2 = backpack:FindFirstChild("Glitched Slap") or char:FindFirstChild("Glitched Slap")
-
-    if item1 and item2 then
-        -- Equipar Dark Matter Slap
-        humanoid:EquipTool(item1)
-        task.wait(0.15)
-        -- Equipar Glitched Slap
-        humanoid:EquipTool(item2)
-        task.wait(0.15)
+    -- Verificar cada slap e garantir que permaneça no character
+    for _, slapName in ipairs(slapNames) do
+        local slap = backpack:FindFirstChild(slapName)
+        if slap then
+            pcall(function()
+                slap.Parent = char
+            end)
+        else
+            slap = char:FindFirstChild(slapName)
+            if slap then
+                pcall(function()
+                    if slap.Parent ~= char then
+                        slap.Parent = char
+                    end
+                end)
+            end
+        end
     end
 end
 
@@ -150,8 +166,17 @@ end
 task.spawn(function()
     while true do
         if enabled then
-            switchTwoItems()
+            maintainAllSlaps()
+            task.wait(0.05)
+        else
+            task.wait(0.2)
         end
-        task.wait(0.05) -- troca rápida
     end
 end)
+
+-- Reconectar quando o personagem morrer
+player.CharacterAdded:Connect(function()
+    task.wait(2)
+end)
+
+corrija agora ao inves segurar toda faz com que vai trocando todas entre os tapas
