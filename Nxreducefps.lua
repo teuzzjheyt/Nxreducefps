@@ -178,5 +178,3 @@ end)
 player.CharacterAdded:Connect(function()
     task.wait(2)
 end)
-
-corrija agora ao inves segurar toda faz com que vai trocando todas entre os tapas
